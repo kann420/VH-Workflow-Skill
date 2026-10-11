@@ -21,7 +21,7 @@ dupOf    optional: id of the master copy (this row is not batched; finalize copi
 ```
 `link.json` (`{"<copy id>":"<master id>"}`) is an alternative to `dupOf` for copies that live in another file format (e.g. cutscene files without timing marks): `finalize.js` copies the master's VI and strips `[x-y]` timing marks for the copy.
 
-## Validator rules (scripts/core/validate.js)
+## Validator rules (scripts/validate.js)
 - `[start-end]` timing marks: same sequence; if EN starts with one, VI must too.
 - Markup tags (br, strong, b, i, u, s, em, p, li, ul, h1–h6, no-wrap, svg-icon, action-key, map-marker, o): same multiset including attributes. Add your engine's tags to the `TAG` regex.
 - Placeholders `{NAME}`, `%s`, `%d`, newlines: same multiset.

@@ -1,5 +1,5 @@
 // Generic batch builder.
-// Usage (cwd = project workspace):  LIMIT=15000 node <skill>/scripts/core/build_batches.js
+// Usage (cwd = project workspace):  LIMIT=15000 node build_batches.js   (scripts copied into the workspace)
 // Input : corpus.jsonl  — one JSON per line:
 //   { id, kind: "dlg"|"choice"|"text", en, vi, speaker?, scene?, order?, group?, key?, dupOf? }
 //   - dlg   : spoken line. `scene` groups lines of one conversation, `order` sorts inside it.

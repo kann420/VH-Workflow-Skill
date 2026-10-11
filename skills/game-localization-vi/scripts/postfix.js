@@ -1,5 +1,5 @@
 // Consistency pass applied on final.json after finalize.js.
-// Usage (cwd = workspace): node <skill>/scripts/core/postfix.js [rulesFile=postfix.rules.js] [--report]
+// Usage (cwd = workspace): node postfix.js [rulesFile=postfix.rules.js] [--report]
 // rules file (CommonJS) exports:
 //   rules:     [[RegExp, replacement], ...]                 // applied to every VI line
 //   enRules:   [[RegExp_on_EN, [[RegExp, replacement],...]]] // applied only when the English source matches
