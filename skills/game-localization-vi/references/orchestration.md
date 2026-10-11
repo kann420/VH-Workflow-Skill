@@ -1,70 +1,84 @@
-# Orchestration — tiered team, prompts, supervision
+# Orchestration — team modes, prompts, supervision
 
-## Team shape
+Everything here is coordinated **through files in `WORK/`** (style guide, bible, batch files, `E/` outputs, `followups.txt`). That is what makes the workflow portable: any harness that can read/write files and run Node can follow it, with or without subagents.
 
+## 1. Pick a mode from your harness's capabilities
+
+| Mode | Needs | Shape |
+|---|---|---|
+| **A — tiered team** | subagents, several in parallel, model choice per subagent, subagents may start subagents | Lead → ≤5 coordinators (mid tier) → ≤3 workers each (cheapest tier, simple lines only) |
+| **A′ — two-level tiered** | subagents with model choice, but no nesting | Lead starts coordinators for hard batches **and** workers directly for simple chunks; coordinators review worker chunks of their batches, or the lead does |
+| **B — flat team** | subagents, no model choice | Lead → ≤5 editors on the same model, each owns a batch list and does hard and simple lines itself |
+| **C — single agent** | no subagents | Lead edits batch after batch, validating and saving after each. Optional manual parallelism: the user opens several sessions/terminals, each told "you own batches X–Y, follow AGENT_TASK.md" |
+
+Rules that hold in every mode:
+- At most **5** agents directly under the lead; at most **3** workers under a coordinator.
+- **Workers only get simple lines**: short UI/menu text, item/outfit/weapon names, combat barks, stat/talent descriptions, test/task strings, short choices with no relationship-dependent pronoun. Never story dialogue whose pronouns depend on who speaks to whom.
+- Story-critical dialogue goes to the strongest editor available.
+- If you cannot choose models, say the tier in the prompt anyway ("you are a worker: only simple lines"), so the division of labour still holds.
+
+### Harness notes (verify against your version — these features change often)
+| Harness | Skill location (typical) | Subagents / parallel work | Likely mode |
+|---|---|---|---|
+| Claude Code | `~/.claude/skills/`, `.claude/skills/` or plugin marketplace | subagent tool with `model` (e.g. opus/sonnet/haiku), background runs with completion notices, messages to running agents | A |
+| Cursor (2.4+) | `.cursor/skills/` (check docs) | parallel subagents with their own context; custom subagents can set model and tools | A or A′ |
+| VS Code + GitHub Copilot | `.github/skills/`, `~/.copilot/skills/` (also reads `.claude/skills/` per some sources) | custom agents (`*.agent.md`) and delegation from a coordinator agent | A′ or B |
+| OpenAI Codex (CLI/IDE/app) | `.agents/skills/` or `~/.agents/skills/` (check docs) | depends on version; if no subagents, run several sessions manually | B (manual) or C |
+| Hermes Agent | `~/.hermes/skills/` | check its delegation features | B or C |
+| Anything else with Agent Skills | its skill folder | — | C at minimum |
+
+No web tools? Ask the user for wiki links or pasted summaries in Phase 2, and lean harder on mining the game text.
+
+## 2. Assigning batches
+Balance by **difficulty**, not batch count: each coordinator/editor gets a mix of hard material it edits itself (story scenes, long documents, quest logs) and easy material (menus, item lists, barks, short choices) it hands to workers in mode A. Give per-batch notes: content type, who speaks to whom, decisions already fixed elsewhere that must be matched (point to the exact `E/` file). Use 1–5 coordinators depending on remaining work and the user's quota.
+
+## 3. Concurrency, quota, interruptions
+- Harnesses cap concurrent subagents and accounts have usage limits; hitting a limit can stop every running agent at once. Partial `E/` files survive. Fewer parallel agents do not reduce total cost but reduce what is lost when a limit hits.
+- Cost scales with tokens read: every agent re-reads the guide, the bible sections it needs and its batch. Keep the guide compact; let cheap models do the bulk of easy lines.
+- On limit errors: stop starting work, tell the user, resume later with the resume prompt.
+
+## 4. Files handed to agents
+Copy `assets/AGENT_TASK.md` and `assets/COORDINATOR.md` into `WORK/` and replace `<WORK>` with the absolute path. The scripts are copied into `WORK/` too, so every agent runs `cd "<WORK>" && node <tool>.js ...`.
+
+## 5. Prompt templates
+Replace `<…>`. "Start a subagent" means whatever your harness uses (a subagent tool, a custom agent, a new session).
+
+### Coordinator (modes A/A′)
 ```
-Lead (you, strongest model)
- ├─ Coordinator A (mid tier)  ── workers (cheapest tier) ×≤3 at a time
- ├─ Coordinator B (mid tier)  ── workers ×≤3
- ├─ ...                         (at most 5 coordinators)
-```
-- **Lead**: owns research, STYLE_GUIDE, batching, assignment, validation, consistency pass, packing, user communication. Supervises with scripts and short reports; does not re-read whole batches.
-- **Coordinator** (e.g. Sonnet): owns a list of batches; edits hard lines itself; splits easy material into chunks for workers; reviews and fixes all worker output; reports decisions that affect other batches.
-- **Worker** (e.g. Haiku, Luna, or the harness's smallest model): edits one chunk of simple lines. Simple = short UI labels and menu text, item/outfit/weapon names, combat barks, stat/talent descriptions, test/task strings, short dialogue choices with no relationship pronouns. Workers never get story dialogue whose pronouns depend on who is speaking to whom.
-
-Model names differ per harness. Use the Agent tool's `model` parameter (`"sonnet"`, `"haiku"`, ...) when available; otherwise describe the tier in the prompt. If the user names specific models, use those.
-
-### Assigning batches
-Balance coordinators by **difficulty**, not batch count: give each a mix of hard material it edits itself (story scenes, long documents, quest logs) and easy material it hands to workers (menus, item lists, barks, short choices), so no coordinator sits idle while another drowns in hard text.
-Give every coordinator per-batch notes: content type, who speaks to whom, and decisions already fixed in other batches that it must match (point to the exact `E/` file). How many coordinators to use (1–5) depends on the amount of remaining work and the user's quota.
-
-### Concurrency and quota
-- Harness limits concurrent subagents (20 in Claude Code). Hitting the account usage limit kills every running agent at once; partial files survive. Running fewer agents does not reduce total cost but lowers the loss when a limit hits.
-- Cost scales with tokens read: every agent re-reads the guide + bible + its batch. Keep the guide compact, tell agents to read only the bible sections they need, and let cheap models do the bulk easy lines.
-- Watch for usage errors in task notifications; stop launching, tell the user, resume after the reset.
-
-## Files handed to agents
-Copy `assets/AGENT_TASK.md` and `assets/COORDINATOR.md` into the workspace and replace `<WORK>` with the absolute workspace path. Agents run the core scripts as `cd "<WORK>" && node "<SKILL>/scripts/core/<tool>.js" ...` (or copy the scripts into WORK).
-
-## Prompt templates
-
-### Coordinator
-```
-You are COORDINATOR <X> of the Vietnamese localization edit of <GAME>. First read and follow <WORK>/COORDINATOR.md (then STYLE_GUIDE.md, AGENT_TASK.md; character_bible.md where relevant). Use worker agents (Agent tool, model "<cheap model>") for simple lines, max 3 at a time.
+You are COORDINATOR <X> of the Vietnamese localization of <GAME>. Read and follow <WORK>/COORDINATOR.md (then STYLE_GUIDE.md and AGENT_TASK.md; character_bible.md where relevant). If you can start subagents, use the cheapest available model as workers for simple lines only, at most 3 at a time; otherwise do everything yourself.
 Your batches:
-- <batch> — <content type>; <hard/easy>; <who does it>; <cross-batch constraints>
-- ...
+- <batch> — <content type>; <hard/easy>; <cross-batch constraints>
 When all are done, report to the lead in the format in COORDINATOR.md.
 ```
 
-### Worker (written by the coordinator, one per chunk)
+### Worker (one per chunk, from `node split.js <batch> <n>`)
 ```
-You are a Vietnamese game-translation editor for <GAME>. Workspace: <WORK>. 1) Read STYLE_GUIDE.md fully. 2) Read B/<batch>__c<k>.txt (blocks: @id | speaker / EN / VI). 3) Edit every line: faithful to EN, natural Vietnamese, pronouns and terms per the guide; keep good lines unchanged; if a character's gender is unknown, use no gendered pronoun. Keep timings [x-y], all <tags>, {vars}, \n exactly. 4) Write E/<batch>.c<k>.jsonl (split c<k>a/c<k>b if >150 lines), one {"id","vi"} per line for EVERY id, valid JSON. 5) Run `node <SKILL>/scripts/core/vchunk.js <batch> <k>` until missing 0 and errors 0 (fixes go in E/<batch>.c<k>z.jsonl). Touch no other files. Reply briefly: lines changed, vchunk result.
+You are a Vietnamese game-translation editor for <GAME> (worker: simple lines only). Workspace: <WORK>. 1) Read STYLE_GUIDE.md fully. 2) Read B/<batch>__c<k>.txt (blocks: @id | speaker / EN / VI). 3) Edit every line: faithful to EN, natural Vietnamese, pronouns and terms per the guide; keep good lines unchanged; a character of unknown gender gets no gendered pronoun. Keep timings [x-y], all <tags>, {vars}, \n exactly. 4) Write E/<batch>.c<k>.jsonl (split c<k>a/c<k>b if >150 lines), one {"id","vi"} per line for EVERY id, valid JSON. 5) Run `cd "<WORK>" && node vchunk.js <batch> <k>` until missing 0 and errors 0 (fixes in E/<batch>.c<k>z.jsonl). Touch no other files. Reply briefly: lines changed, vchunk result.
 Notes for this chunk: <content type, speakers, terms to watch>
 ```
 
-### Single-model batch editor (when not using coordinators)
+### Editor (modes B/C, or a single batch)
 ```
-You are a Vietnamese editor for <GAME>. Follow <WORK>/AGENT_TASK.md. BATCH = <name>. This is a <DIALOGUE scene batch | TEXT/UI batch | CHOICES batch>. <batch-specific notes>. If STYLE_GUIDE and character_bible disagree, follow STYLE_GUIDE. Quality first.
+You are a Vietnamese editor for <GAME>. Follow <WORK>/AGENT_TASK.md. BATCH = <name>. This is a <DIALOGUE scene | TEXT/UI | CHOICES> batch. <batch-specific notes>. Re-read the additions table at the end of STYLE_GUIDE.md before starting. If STYLE_GUIDE and character_bible disagree, follow STYLE_GUIDE. Quality first.
 ```
 
 ### Resume after interruption
 ```
-<same role prompt>. This batch was partly done before an interruption. Files E/<batch>.part1.jsonl... already exist — do NOT overwrite or edit them. Run `node <SKILL>/scripts/core/missing.js <batch>` to get the missing ids. Read the existing parts to keep pronouns/terms consistent, read the batch file for scene context, edit ONLY the missing ids into new files E/<batch>.part<next>.jsonl, then validate.
+<same role prompt>. This batch was partly done before an interruption. Files E/<batch>.part*.jsonl already exist — do NOT overwrite or edit them. Run `cd "<WORK>" && node missing.js <batch>` to get the missing ids. Read the existing parts to keep pronouns/terms consistent and the batch file for scene context, edit ONLY the missing ids into new files E/<batch>.part<next>.jsonl, then validate.
 ```
 
-## Supervision checklist (lead)
-1. On every completion notification: `validate.js <batch>`; if errors, send the agent back (SendMessage) or fix in `E/<batch>.partz_fix.jsonl`.
-2. `show.js <batch> 30` — read a sample: pronouns right? spoken lines natural? terms per glossary? untranslated English left? For coordinator batches with workers, sample worker chunks (`show.js <batch> 40 .c`).
-3. Read the agent's "decisions / doubts" list. Decide. Record in STYLE_GUIDE "Bổ sung" table; fix the character bible if it contradicts the guide; message running agents affected by the decision.
-4. Append cross-batch fixes to `followups.txt` (e.g. "choice X must match lyric in batch Y", "term Z drifted").
-5. Track progress with `status.js`; give the user progress in plain numbers (batches done / total, % lines) and an honest ETA.
-6. Agents sometimes create helper scripts or extra files in the workspace — harmless; check they did not write outside their batches (`find E -newer <marker>`).
+## 6. Supervision checklist (lead)
+1. When a batch is reported done: `node validate.js <batch>`; on errors, send the editor back or fix in `E/<batch>.partz_fix.jsonl`.
+2. `node show.js <batch> 30` — read a sample: pronouns right? spoken lines natural? terms per glossary? English left over? For batches with workers, sample worker chunks (`node show.js <batch> 40 .c`).
+3. Read the editor's decisions/doubts. Decide, record in the STYLE_GUIDE additions table, fix the bible if it contradicts the guide. If you can message running agents, tell the affected ones; otherwise they pick it up from the table before their next batch.
+4. Append cross-batch fixes to `followups.txt` ("choice X must match line Y", "term Z drifted").
+5. `node status.js` for progress; report to the user in plain numbers (batches done / total, % of lines) with an honest ETA.
+6. Agents may leave helper scripts in the workspace — harmless; check they wrote only their own `E/` files.
 
-## Lessons learned
-- Group dialogue by scene and show the speaker on every line — editors fixed many lines the previous translation got wrong only because the scene showed who the listener really was (e.g. a radio aside to a technician, not to the protagonist).
-- Fix decisions once, centrally. Conflicting instructions between the guide and the bible cost a round of re-edits.
+## 7. Lessons learned
+- Group dialogue by scene and show the speaker on every line; many wrong lines are only fixable once the editor sees who the listener really is.
+- Fix decisions once, centrally, in files. Conflicting instructions between guide and bible cost a round of re-edits.
 - Translation choices are per game. Reuse the process, never another game's pronoun table or glossary.
-- A validator that rejects lines breaking timings/tags/placeholders makes it safe to let many agents write in parallel.
+- A validator that rejects lines breaking timings/tags/placeholders makes parallel editing safe.
 - Keep the build pipeline byte-identical on unchanged data; verify after every pack.
-- Game updates can overwrite index files and silently disable the mod (Vietnamese text falls back to a font without diacritics → boxes "□"). Keep vanilla backups per patch and a re-merge script.
+- Game updates can overwrite index files and silently disable a mod (Vietnamese text falls back to a font without diacritics → "□"). Keep vanilla backups per patch and a re-merge tool.

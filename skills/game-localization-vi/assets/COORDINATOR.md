@@ -15,7 +15,8 @@ Bạn là trưởng nhóm biên tập. Trưởng dự án giao cho bạn một d
 
 ## 2. Giao việc cho trợ lý
 - Chia: `node split.js <lô> <n>` → `B/<lô>__c1.txt`... (chỉ gồm id chưa có trong E/).
-- Gọi trợ lý bằng tool Agent (model rẻ nhất mà harness cho phép, ví dụ "haiku"), chạy nền, **tối đa 3 trợ lý cùng lúc**, mỗi trợ lý 1 chunk. Prompt mẫu ở `references/orchestration.md` của skill (mục "Worker"); thêm lưu ý riêng của chunk (loại nội dung, người nói/nghe, thuật ngữ).
+- Gọi trợ lý bằng cơ chế subagent của harness (chọn model rẻ nhất có sẵn nếu được chọn model), **tối đa 3 trợ lý cùng lúc**, mỗi trợ lý 1 chunk. Prompt mẫu ở `references/orchestration.md` của skill (mục "Worker"); thêm lưu ý riêng của chunk (loại nội dung, người nói/nghe, thuật ngữ).
+- Nếu harness không cho bạn gọi subagent: tự làm luôn phần dễ (hoặc báo trưởng dự án để họ giao chunk dễ cho trợ lý).
 - Trợ lý ghi `E/<lô>.c<k>.jsonl` và tự kiểm tra bằng `node vchunk.js <lô> <k>`.
 
 ## 3. Bạn tự biên tập phần khó

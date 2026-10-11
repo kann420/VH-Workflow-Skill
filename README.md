@@ -1,13 +1,13 @@
 # game-localization-vi
 
-**A Claude Code skill for translating video games into Vietnamese — or re-editing an existing Vietnamese translation — with a research-first, tiered-agent workflow.**
-**Skill Claude Code để Việt hóa game hoặc biên tập lại bản Việt hóa có sẵn, theo quy trình research trước, đội agent nhiều tầng.**
+**An Agent Skill for translating video games into Vietnamese — or re-editing an existing Vietnamese translation — with a research-first, tiered-agent workflow.**
+**Agent Skill để Việt hóa game hoặc biên tập lại bản Việt hóa có sẵn, theo quy trình research trước, đội agent nhiều tầng.**
 
 [English](#english) · [Tiếng Việt](#tiếng-việt)
 
 ![Workflow](docs/workflow.png)
 
-<sub>Diagram source: [`docs/workflow.html`](docs/workflow.html) (plain HTML/CSS — open it in a browser).</sub>
+<sub>Diagram source: [`docs/workflow.html`](docs/workflow.html) (plain HTML/CSS).</sub>
 
 ---
 
@@ -16,63 +16,74 @@
 ### What it is
 `game-localization-vi` is a **process**, not a phrasebook. It tells an AI agent *how* to run a game translation project end to end; it never decides *how a particular game should be translated*. Pronoun pairs, which names stay in the source language, the tone of documents, how a monster or an AI speaks — all of that comes from researching each game and is written into that game's own style guide.
 
-Why: Vietnamese pronouns (xưng hô) encode age, gender, kinship, rank and attitude, and Vietnamese separates spoken and written register sharply. Translations fail when the editor does not know who is speaking to whom, or what kind of text a line is. The workflow fixes exactly that.
+Why: Vietnamese pronouns (xưng hô) encode age, gender, kinship, rank and attitude, and Vietnamese separates spoken and written register sharply. Translations fail when the editor does not know who is speaking to whom, or what kind of text a line is.
 
 ### Workflow
-1. **Extract** every string into `corpus.jsonl` (source, current translation, speaker, scene order) and prove the game files can be rebuilt byte-identically.
-2. **Research the story first** — bot-friendly sources (wikis, Wikipedia, official blogs, walkthrough sites, reviews) plus mining the game's own text → a **character bible** (gender, age, relationships, register, recommended pronoun pairs).
-3. **Write a style guide for this game** from a template: pronoun table, spoken vs written register, glossary, examples. Characters of **unknown gender get no gendered pronoun**.
-4. **Batch** the text (~15k source characters per batch); dialogue is grouped **by scene** so editors see who talks to whom.
-5. **Tiered editing team**: the lead (strongest model) supervises up to **5 coordinators** (mid-tier models); each coordinator edits the hard lines itself and hands **only simple lines** (UI, item names, barks, short choices) to up to 3 **workers** (cheapest model — Haiku, Luna, …), then reviews every worker line.
-6. **Validate & supervise** — subtitle timings, markup tags and placeholders must survive; decisions are fixed centrally and pushed to running agents.
-7. **Consistency pass** — merge edits, propagate duplicate lines, unify drifted terms with source-aware rules.
-8. **Rebuild, verify, install** — every entry checked, backups kept, game closed.
+1. **Extract** every string into `corpus.jsonl` (source, current translation, speaker, scene order); prove the game files can be rebuilt identically.
+2. **Research the story first** — bot-friendly sources plus the game's own text → a **character bible** (gender, age, relationships, register, pronoun pairs).
+3. **Style guide for this game** — pronoun table, spoken vs written register, glossary, examples. **Unknown gender → no gendered pronoun.**
+4. **Batches** of ~15k source characters; dialogue grouped **by scene**.
+5. **Translate** — with subagents: lead → up to **5 coordinators** (hard lines) → up to **3 workers** each (cheapest model, simple lines only). Without subagents: one agent, batch by batch.
+6. **Validate** — subtitle timings, tags and placeholders must survive; decisions are kept in shared files.
+7. **Consistency pass**, then **rebuild, verify and install** (backups kept, game closed).
+
+### Compatibility
+The skill follows the open **Agent Skills** format (`SKILL.md` + `references/` + `assets/` + `scripts/`) and coordinates everything through files, so it does not depend on one vendor's tools. How much of the team workflow you get depends on the harness:
+
+| Harness | Skill folder (typical — check your version) | Team mode |
+|---|---|---|
+| Claude Code | `~/.claude/skills/` · `.claude/skills/` · plugin marketplace | full tiered team |
+| Cursor (2.4+) | `.cursor/skills/` | tiered or two-level (subagents) |
+| VS Code + GitHub Copilot | `.github/skills/` · `~/.copilot/skills/` | two-level or flat (custom agents) |
+| OpenAI Codex | `.agents/skills/` · `~/.agents/skills/` | flat (several sessions) or single agent |
+| Hermes Agent | `~/.hermes/skills/` | flat or single agent |
+| Other Agent Skills harnesses | their skill folder | single agent at minimum |
+
+Tested end to end on **Claude Code** only. Other harnesses support the format, but skill paths and subagent features change between versions — verify in your harness's docs. Without subagents the workflow still works, just sequentially.
 
 ### Install
 
-**Option A — Claude Code plugin marketplace (recommended)**
-Inside Claude Code:
+**Claude Code — plugin marketplace (recommended)**
 ```text
 /plugin marketplace add kann420/VH-Workflow-Skill
 /plugin install game-localization-vi@viet-hoa-skills
 ```
-From a terminal:
+or from a terminal:
 ```bash
 claude plugin marketplace add kann420/VH-Workflow-Skill
 claude plugin install game-localization-vi@viet-hoa-skills --scope user
 ```
 
-**Option B — npx (third-party tools, not by Anthropic)**
+**Any harness — npx (third-party tools, not by Anthropic)**
 ```bash
-# Vercel Labs "skills" CLI
-npx skills add kann420/VH-Workflow-Skill -a claude-code -g
+# Vercel Labs "skills" CLI — supports many agents; see `npx skills --help` for the -a values
+npx skills add kann420/VH-Workflow-Skill
 ```
 ```bash
-# degit: copy just the skill folder into your personal skills directory
-npx degit kann420/VH-Workflow-Skill/skills/game-localization-vi ~/.claude/skills/game-localization-vi
+# degit: copy only the skill folder into your harness's skill directory
+npx degit kann420/VH-Workflow-Skill/skills/game-localization-vi <skill-folder>/game-localization-vi
+# e.g. ~/.claude/skills/game-localization-vi · .cursor/skills/game-localization-vi · .github/skills/game-localization-vi
 ```
 
-**Option C — manual copy**
-Copy `skills/game-localization-vi/` to:
-- personal (all projects): `~/.claude/skills/game-localization-vi/` — Windows: `%USERPROFILE%\.claude\skills\game-localization-vi\`
-- one project only: `<project>/.claude/skills/game-localization-vi/`
-
-Restart Claude Code (or start a new session) after installing.
+**Any harness — manual copy**
+Copy `skills/game-localization-vi/` into your harness's skill folder (table above). Windows: `~` is `%USERPROFILE%`. Restart the harness or open a new session afterwards.
 
 ### Requirements
-- Claude Code (or another agent harness that supports Agent Skills and subagents).
+- An agent harness that supports Agent Skills (or can be told to read `SKILL.md`), with file access and a shell.
 - **Node.js 18+** for the bundled scripts.
+- Web search/fetch helps the research step (otherwise provide links yourself).
+- Subagents are optional (they make it faster and cheaper).
 - Your own engine-specific extract/repack tools for the game (the skill explains what they must do and how to verify them).
 
 ### Usage
-Just describe the job, for example:
+Describe the job, for example:
 - "Việt hóa game *X*, text nằm trong `C:\Games\X\localization`"
 - "The Vietnamese mod for *Y* has wrong pronouns and Google-Translate sentences, fix it"
 - "Continue the localization batches from yesterday"
 
 ### Repository layout
 ```
-.claude-plugin/          plugin + marketplace manifests
+.claude-plugin/          Claude Code plugin + marketplace manifests
 docs/                    workflow diagram (HTML + PNG)
 skills/game-localization-vi/
   SKILL.md               the workflow
@@ -85,7 +96,7 @@ skills/game-localization-vi/
 MIT — see [LICENSE](LICENSE). © 2026 VH Workflow Skills.
 
 ### Origin
-Built while re-editing a 43,000-line Vietnamese fan translation of a story-heavy action game: the old translation had been machine-translated and patched with regexes, with wrong pronouns everywhere. The game-specific parts of that project are intentionally **not** included — only the reusable process.
+Built while re-editing a 43,000-line Vietnamese fan translation of a story-heavy action game whose old translation was machine-translated and patched with regexes. Game-specific parts are intentionally **not** included — only the reusable process.
 
 ---
 
@@ -94,52 +105,63 @@ Built while re-editing a 43,000-line Vietnamese fan translation of a story-heavy
 ### Đây là gì
 `game-localization-vi` là một **quy trình**, không phải bộ từ điển. Skill chỉ cho AI biết *cách* chạy một dự án Việt hóa từ đầu đến cuối; nó **không** quyết định *một game cụ thể phải dịch thế nào*. Cặp xưng hô, tên nào giữ tiếng gốc, giọng văn tài liệu, cách quái vật hay AI nói chuyện… đều lấy từ research của từng game và ghi vào cẩm nang riêng của game đó.
 
-Lý do: xưng hô tiếng Việt mang theo tuổi tác, giới tính, quan hệ gia đình, cấp bậc và thái độ; tiếng Việt cũng phân biệt rõ văn nói và văn viết. Bản dịch hỏng khi người dịch không biết ai đang nói với ai, hay câu đó là loại văn bản gì. Quy trình này giải quyết đúng chỗ đó.
+Lý do: xưng hô tiếng Việt mang theo tuổi tác, giới tính, quan hệ gia đình, cấp bậc và thái độ; tiếng Việt cũng phân biệt rõ văn nói và văn viết. Bản dịch hỏng khi người dịch không biết ai đang nói với ai, hay câu đó là loại văn bản gì.
 
 ### Quy trình
-1. **Trích xuất** toàn bộ text vào `corpus.jsonl` (câu gốc, bản dịch hiện tại, người nói, thứ tự trong cảnh) và chứng minh dựng lại file game giống hệt từng byte.
-2. **Research cốt truyện trước tiên** — nguồn uy tín, không chặn bot (wiki, Wikipedia, blog nhà phát triển, trang hướng dẫn, review) + đọc chính text trong game → **hồ sơ nhân vật** (giới tính, tuổi, quan hệ, giọng nói, cặp xưng hô đề xuất).
-3. **Viết cẩm nang riêng cho game** từ mẫu: bảng xưng hô, văn nói và văn viết, thuật ngữ, ví dụ. Nhân vật **không rõ giới tính thì không dùng đại từ nhân xưng có giới tính**.
-4. **Chia lô** (~15 nghìn ký tự gốc mỗi lô); thoại được xếp **theo cảnh** để người sửa thấy ai nói với ai.
-5. **Đội biên tập nhiều tầng**: trưởng dự án (model mạnh nhất) điều phối tối đa **5 trưởng nhóm** (model tầng giữa). Mỗi trưởng nhóm tự sửa câu khó, giao **chỉ câu đơn giản** (UI, tên vật phẩm, câu chiến đấu, lựa chọn ngắn) cho tối đa 3 **trợ lý** (model rẻ nhất — Haiku, Luna…), rồi duyệt lại toàn bộ bài của trợ lý.
-6. **Kiểm tra & giám sát** — mốc thời gian phụ đề, thẻ định dạng, biến phải còn nguyên; quyết định được chốt tập trung và gửi tới các agent đang chạy.
-7. **Rà soát thống nhất** — gộp bản sửa, đồng bộ câu trùng, thống nhất thuật ngữ bị lệch bằng luật có điều kiện theo câu gốc.
-8. **Đóng gói, kiểm tra, cài đặt** — kiểm từng dòng, giữ bản sao lưu, cài khi đã thoát game.
+1. **Trích xuất** toàn bộ text vào `corpus.jsonl` (câu gốc, bản dịch hiện tại, người nói, thứ tự trong cảnh); chứng minh dựng lại file game giống hệt.
+2. **Research cốt truyện trước tiên**: nguồn không chặn bot + text trong game → **hồ sơ nhân vật** (giới tính, tuổi, quan hệ, giọng nói, cặp xưng hô).
+3. **Cẩm nang riêng cho game**: bảng xưng hô, văn nói và văn viết, thuật ngữ, ví dụ. **Không rõ giới tính thì không dùng đại từ có giới tính.**
+4. **Chia lô** khoảng 15 nghìn ký tự gốc; thoại xếp **theo cảnh**.
+5. **Dịch**: nếu có subagent thì trưởng dự án → tối đa **5 trưởng nhóm** (câu khó) → tối đa **3 trợ lý** mỗi nhóm (model rẻ nhất, chỉ câu dễ). Không có subagent thì một agent làm lần lượt từng lô.
+6. **Kiểm tra**: mốc phụ đề, thẻ, biến phải còn nguyên; mọi quyết định lưu trong file dùng chung.
+7. **Rà soát thống nhất**, rồi **đóng gói, kiểm tra và cài** (giữ bản sao lưu, thoát game trước khi cài).
+
+### Tương thích
+Skill theo chuẩn mở **Agent Skills** (`SKILL.md` + `references/` + `assets/` + `scripts/`) và điều phối mọi thứ qua file, nên không phụ thuộc công cụ của một hãng nào. Mức độ dùng được đội agent tùy harness:
+
+| Harness | Thư mục skill (thường gặp — kiểm tra theo phiên bản) | Chế độ đội |
+|---|---|---|
+| Claude Code | `~/.claude/skills/` · `.claude/skills/` · plugin marketplace | đội nhiều tầng đầy đủ |
+| Cursor (2.4+) | `.cursor/skills/` | nhiều tầng hoặc hai tầng (subagent) |
+| VS Code + GitHub Copilot | `.github/skills/` · `~/.copilot/skills/` | hai tầng hoặc một tầng (custom agent) |
+| OpenAI Codex | `.agents/skills/` · `~/.agents/skills/` | một tầng (mở nhiều phiên) hoặc một agent |
+| Hermes Agent | `~/.hermes/skills/` | một tầng hoặc một agent |
+| Harness khác hỗ trợ Agent Skills | thư mục skill của nó | tối thiểu một agent |
+
+Mới thử đầy đủ trên **Claude Code**. Các harness khác hỗ trợ định dạng này, nhưng đường dẫn và tính năng subagent thay đổi theo phiên bản, nên hãy kiểm tra tài liệu của harness. Không có subagent thì quy trình vẫn chạy, chỉ là làm tuần tự.
 
 ### Cài đặt
 
-**Cách A — Plugin marketplace của Claude Code (khuyên dùng)**
-Trong Claude Code:
+**Claude Code — plugin marketplace (khuyên dùng)**
 ```text
 /plugin marketplace add kann420/VH-Workflow-Skill
 /plugin install game-localization-vi@viet-hoa-skills
 ```
-Trong terminal:
+hoặc trong terminal:
 ```bash
 claude plugin marketplace add kann420/VH-Workflow-Skill
 claude plugin install game-localization-vi@viet-hoa-skills --scope user
 ```
 
-**Cách B — npx (công cụ bên thứ ba, không phải của Anthropic)**
+**Mọi harness — npx (công cụ bên thứ ba, không phải của Anthropic)**
 ```bash
-# CLI "skills" của Vercel Labs
-npx skills add kann420/VH-Workflow-Skill -a claude-code -g
+# CLI "skills" của Vercel Labs — hỗ trợ nhiều agent; xem `npx skills --help` để biết giá trị -a
+npx skills add kann420/VH-Workflow-Skill
 ```
 ```bash
-# degit: chỉ chép thư mục skill vào thư mục skill cá nhân
-npx degit kann420/VH-Workflow-Skill/skills/game-localization-vi ~/.claude/skills/game-localization-vi
+# degit: chỉ chép thư mục skill vào thư mục skill của harness
+npx degit kann420/VH-Workflow-Skill/skills/game-localization-vi <thư-mục-skill>/game-localization-vi
+# vd. ~/.claude/skills/game-localization-vi · .cursor/skills/game-localization-vi · .github/skills/game-localization-vi
 ```
 
-**Cách C — chép tay**
-Chép thư mục `skills/game-localization-vi/` vào:
-- dùng cho mọi dự án: `~/.claude/skills/game-localization-vi/` — Windows: `%USERPROFILE%\.claude\skills\game-localization-vi\`
-- chỉ một dự án: `<dự án>/.claude/skills/game-localization-vi/`
-
-Cài xong thì khởi động lại Claude Code (hoặc mở phiên mới).
+**Mọi harness — chép tay**
+Chép thư mục `skills/game-localization-vi/` vào thư mục skill của harness (bảng trên). Trên Windows, `~` là `%USERPROFILE%`. Cài xong thì khởi động lại harness hoặc mở phiên mới.
 
 ### Yêu cầu
-- Claude Code (hoặc harness khác hỗ trợ Agent Skills và subagent).
+- Harness hỗ trợ Agent Skills (hoặc có thể bảo nó đọc `SKILL.md`), có quyền đọc/ghi file và chạy lệnh.
 - **Node.js 18+** để chạy các script kèm theo.
+- Có công cụ tìm kiếm/đọc web thì bước research tốt hơn (không có thì bạn tự đưa link).
+- Subagent là tùy chọn (có thì nhanh và rẻ hơn).
 - Công cụ trích xuất/đóng gói riêng cho engine của game (skill hướng dẫn công cụ đó cần làm gì và kiểm tra ra sao).
 
 ### Cách dùng
@@ -150,7 +172,7 @@ Chỉ cần mô tả việc cần làm, ví dụ:
 
 ### Cấu trúc repo
 ```
-.claude-plugin/          khai báo plugin + marketplace
+.claude-plugin/          khai báo plugin + marketplace cho Claude Code
 docs/                    sơ đồ quy trình (HTML + PNG)
 skills/game-localization-vi/
   SKILL.md               quy trình
@@ -163,4 +185,4 @@ skills/game-localization-vi/
 MIT — xem [LICENSE](LICENSE). © 2026 VH Workflow Skills.
 
 ### Nguồn gốc
-Skill được đúc kết khi biên tập lại một bản Việt hóa 43.000 dòng của một game hành động nặng cốt truyện. Bản cũ dịch máy rồi vá bằng regex, sai xưng hô khắp nơi. Các phần riêng của game đó cố ý **không** đưa vào đây; chỉ giữ lại quy trình dùng lại được.
+Skill được đúc kết khi biên tập lại một bản Việt hóa 43.000 dòng của một game hành động nặng cốt truyện, vốn dịch máy rồi vá bằng regex. Các phần riêng của game đó cố ý **không** đưa vào đây; chỉ giữ lại quy trình dùng lại được.
