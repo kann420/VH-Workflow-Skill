@@ -27,6 +27,18 @@ Why: Vietnamese pronouns (xưng hô) encode age, gender, kinship, rank and attit
 6. **Validate** — subtitle timings, tags and placeholders must survive; decisions are kept in shared files.
 7. **Consistency pass**, then **rebuild, verify and install** (backups kept, game closed).
 
+### Benefits: less quota, faster
+Measured on a real 43,000-line project (98 batches). The first half ran entirely on the top model, one agent per batch; the second half used the tiered team (mid-tier coordinators + cheapest-model workers).
+
+| | Top model only | Tiered workflow | Change |
+|---|---|---|---|
+| Tokens per 100k source characters | ~1.08 M (top model) | ~0.36 M (mid tier) + workers | **≈ −67% tokens** |
+| API-equivalent cost per 100k source characters | $4.4 – 6.9 | $0.8 – 1.3 | **≈ −80% cost** |
+| Parallel agents needed for the same throughput | 12 | 3 (+ small workers) | **−75%**, far fewer usage-limit stops |
+| Wall-clock vs one agent doing batches one by one | ~20 h (estimated) | ~2.5–3 h | **≈ −85% time** |
+
+Caveats: the tiered half had easier text (UI, documents) because the story dialogue was done first, so a fair estimate of the saving from tiering alone is **50–65% less quota**. Prices: API list prices at the time; subscription quota uses its own (unpublished) weighting.
+
 ### Compatibility
 The skill follows the open **Agent Skills** format (`SKILL.md` + `references/` + `assets/` + `scripts/`) and coordinates everything through files, so it does not depend on one vendor's tools. How much of the team workflow you get depends on the harness:
 
@@ -115,6 +127,18 @@ Lý do: xưng hô tiếng Việt mang theo tuổi tác, giới tính, quan hệ 
 5. **Dịch**: nếu có subagent thì trưởng dự án → tối đa **5 trưởng nhóm** (câu khó) → tối đa **3 trợ lý** mỗi nhóm (model rẻ nhất, chỉ câu dễ). Không có subagent thì một agent làm lần lượt từng lô.
 6. **Kiểm tra**: mốc phụ đề, thẻ, biến phải còn nguyên; mọi quyết định lưu trong file dùng chung.
 7. **Rà soát thống nhất**, rồi **đóng gói, kiểm tra và cài** (giữ bản sao lưu, thoát game trước khi cài).
+
+### Lợi ích: tiết kiệm quota, dịch nhanh hơn
+Đo trên một dự án thật 43.000 dòng (98 lô). Nửa đầu chạy toàn bằng model mạnh nhất, mỗi agent một lô; nửa sau dùng đội nhiều tầng (trưởng nhóm tầng giữa + trợ lý model rẻ nhất).
+
+| | Chỉ dùng model mạnh nhất | Quy trình nhiều tầng | Thay đổi |
+|---|---|---|---|
+| Token cho mỗi 100 nghìn ký tự gốc | ~1,08 triệu (model mạnh) | ~0,36 triệu (tầng giữa) + trợ lý | **≈ −67% token** |
+| Chi phí quy đổi giá API cho mỗi 100 nghìn ký tự gốc | $4,4 – 6,9 | $0,8 – 1,3 | **≈ −80% chi phí** |
+| Số agent song song cần cho cùng tốc độ | 12 | 3 (+ trợ lý nhỏ) | **−75%**, ít bị chạm giới hạn quota hơn nhiều |
+| Thời gian so với một agent làm lần lượt từng lô | ~20 giờ (ước tính) | ~2,5–3 giờ | **≈ −85% thời gian** |
+
+Lưu ý: nửa sau có nội dung dễ hơn (giao diện, tài liệu) vì thoại cốt truyện đã làm trước, nên mức tiết kiệm công bằng nhờ riêng việc chia tầng là khoảng **50–65% quota**. Giá tính theo bảng giá API lúc đo; quota theo gói có cách quy đổi riêng (không công bố).
 
 ### Tương thích
 Skill theo chuẩn mở **Agent Skills** (`SKILL.md` + `references/` + `assets/` + `scripts/`) và điều phối mọi thứ qua file, nên không phụ thuộc công cụ của một hãng nào. Mức độ dùng được đội agent tùy harness:
