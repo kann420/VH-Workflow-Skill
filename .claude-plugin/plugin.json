@@ -1,0 +1,20 @@
+{
+  "name": "game-localization-vi",
+  "version": "1.0.0",
+  "description": "Generic workflow for translating or re-editing video games into Vietnamese: story research first, per-game style guide and character bible, tiered subagent team (lead, up to 5 coordinators, cheap workers for simple lines), automatic validation, consistency pass, repack.",
+  "keywords": [
+    "localization",
+    "translation",
+    "vietnamese",
+    "viet-hoa",
+    "game",
+    "subtitles"
+  ],
+  "author": {
+    "name": "VH Workflow Skills",
+    "url": "https://github.com/kann420"
+  },
+  "homepage": "https://github.com/kann420/VH-Workflow-Skill",
+  "repository": "https://github.com/kann420/VH-Workflow-Skill",
+  "license": "MIT"
+}

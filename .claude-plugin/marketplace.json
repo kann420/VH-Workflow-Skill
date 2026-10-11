@@ -1,0 +1,15 @@
+{
+  "name": "viet-hoa-skills",
+  "description": "Vietnamese game localization (Việt hóa game) skills for Claude Code.",
+  "owner": {
+    "name": "VH Workflow Skills",
+    "url": "https://github.com/kann420"
+  },
+  "plugins": [
+    {
+      "name": "game-localization-vi",
+      "source": ".",
+      "description": "Generic workflow for translating or re-editing video games into Vietnamese (Việt hóa game) with research, style guide, tiered subagents and validation."
+    }
+  ]
+}
